@@ -1,11 +1,11 @@
 def add(x, y):
     """Add Function"""
-    return x + y
+    pass
 
 
 def subtract(x, y):
     """Subtract Function"""
-    return x - y
+    pass
 
 
 def multiply(x, y):
