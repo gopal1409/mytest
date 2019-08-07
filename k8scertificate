@@ -1,0 +1,48 @@
+Generate a CSR yaml blob and send it to the apiserver by running the following command:
+
+cat <<EOF | kubectl apply -f -
+apiVersion: certificates.k8s.io/v1beta1
+kind: CertificateSigningRequest
+metadata:
+  name: my-svc.my-namespace
+spec:
+  request: $(cat server.csr | base64 | tr -d '\n')
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
+EOF
+Notice that the server.csr file created in step 1 is base64 encoded and stashed in the .spec.request field. We are also requesting a certificate with the “digital signature”, “key encipherment”, and “server auth” key usages. We support all key usages and extended key usages listed here so you can request client certificates and other certificates using this same API.
+
+The CSR should now be visible from the API in a Pending state. You can see it by running:
+
+kubectl describe csr my-svc.my-namespace
+Name:                   my-svc.my-namespace
+Labels:                 <none>
+Annotations:            <none>
+CreationTimestamp:      Tue, 21 Mar 2017 07:03:51 -0700
+Requesting User:        yourname@example.com
+Status:                 Pending
+Subject:
+        Common Name:    my-svc.my-namespace.svc.cluster.local
+        Serial Number:
+Subject Alternative Names:
+        DNS Names:      my-svc.my-namespace.svc.cluster.local
+        IP Addresses:   192.0.2.24
+                        10.0.34.2
+Events: <none>
+Get the Certificate Signing Request Approved
+Approving the certificate signing request is either done by an automated approval process or on a one off basis by a cluster administrator. More information on what this involves is covered below.
+
+Download the Certificate and Use It
+Once the CSR is signed and approved you should see the following:
+
+kubectl get csr
+NAME                  AGE       REQUESTOR               CONDITION
+my-svc.my-namespace   10m       yourname@example.com    Approved,Issued
+You can download the issued certificate and save it to a server.crt file by running the following:
+
+kubectl get csr my-svc.my-namespace -o jsonpath='{.status.certificate}' \
+    | base64 --decode > server.crt
+Now you can use server.crt and server-key.pem as the keypair to start your HTTPS server.
+
